@@ -93,7 +93,6 @@ def load_library() -> None:
 
 
 if is_apworld():
-    print("ap world")
     if "lib" not in sys.path:
         sys.path.append("lib")
 
