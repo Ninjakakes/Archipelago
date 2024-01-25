@@ -55,6 +55,11 @@ class SuperJunkoidWorld(World):
     def create_item(self, name: str) -> SuperJunkoidItem:
         return SuperJunkoidItem(name, self.player)
 
+    def generate_early(self) -> None:
+        early_items = ["Feather", "Wallkicks", "Magic Broom"]
+        early_item = self.multiworld.random.choice(early_items)
+        self.multiworld.local_early_items[self.player][early_item] = 1
+
     def create_regions(self) -> None:
         menu = Region("Menu", self.player, self.multiworld)
         self.multiworld.regions.append(menu)
