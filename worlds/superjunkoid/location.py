@@ -3,7 +3,7 @@ from typing import Optional
 from BaseClasses import Location, Region
 from .config import base_id
 
-from super_junkoid_randomizer.location import Location as SjLocation, pullCSV
+from super_junkoid_randomizer.location import Location as SjLocation,pullCSV
 
 location_data = pullCSV()
 

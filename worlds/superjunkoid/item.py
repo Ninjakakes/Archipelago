@@ -44,13 +44,13 @@ local_id_to_sj_item: Dict[int, SjItem] = {
     0x0b: Items.PurpleLocket,
     0x0c: Items.SanguineFin,
     0x0d: Items.MagicSoap,
-    0x0e: Items.StormsGem,
-    0x0f: Items.DreamersCrown,
-    0x10: Items.MagicBroom,
-    0x11: Items.Wallkicks,
-    0x12: Items.RatCloak,
-    0x13: Items.LuckyFrog,
-    0x14: Items.BigLeagueGlove
+    0x0f: Items.StormsGem,
+    0x10: Items.DreamersCrown,
+    0x11: Items.MagicBroom,
+    0x12: Items.Wallkicks,
+    0x13: Items.RatCloak,
+    0x14: Items.LuckyFrog,
+    0x15: Items.BigLeagueGlove
 }
 
 id_to_sj_item = {
