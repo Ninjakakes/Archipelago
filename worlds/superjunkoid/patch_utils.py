@@ -251,7 +251,7 @@ class ItemRomData:
                     _DestinationType.Other,
                     item_id,
                     player_index,
-                    progression
+                    not progression
                 )
             for loc_id in sj_loc_ids:
                 item_table[loc_id] = table_entry

@@ -112,6 +112,11 @@ class SuperJunkoidWorld(World):
                 count_sps += 1
             self.multiworld.itempool.append(this_item)
 
+    def get_filler_item_name(self) -> str:
+        filler_items = ["Baseball", "Sparksuit"]
+        filler_item = self.multiworld.random.choice(filler_items)
+        return filler_item
+
     def generate_output(self, output_directory: str) -> None:
         assert self.sj_game, "can't call generate_output without create_regions"
 
