@@ -15,53 +15,52 @@ from worlds.superjunkoid.item import local_id_to_sj_item, SuperJunkoidItem
 from super_junkoid_randomizer.game import Game as SjGame
 from super_junkoid_randomizer.ips import patch as ips_patch
 
-
 box_blue_tbl = {
-    "A": 0x2CC0,
-    "B": 0x2CC1,
-    "C": 0x2CC2,
-    "D": 0x2CC3,
-    "E": 0x2CC4,
-    "F": 0x2CC5,
-    "G": 0x2CC6,
-    "H": 0x2CC7,
-    "I": 0x2CC8,
-    "J": 0x2CC9,
-    "K": 0x2CCA,
-    "L": 0x2CCB,
-    "M": 0x2CCC,
-    "N": 0x2CCD,
-    "O": 0x2CCE,
-    "P": 0x2CCF,
-    "Q": 0x2CD0,
-    "R": 0x2CD1,
-    "S": 0x2CD2,
-    "T": 0x2CD3,
-    "U": 0x2CD4,
-    "V": 0x2CD5,
-    "W": 0x2CD6,
-    "X": 0x2CD7,
-    "Y": 0x2CD8,
-    "Z": 0x2CD9,
-    " ": 0x2C0F,
-    "!": 0x2CDF,
-    "?": 0x2CDE,
-    "'": 0x2CDC,
-    ",": 0xACDC,
-    ".": 0x2CDA,
-    "-": 0x2CDD,
-    "_": 0x000E,  # character used for edges of screen during text box
-    "1": 0x2C01,
-    "2": 0x2C02,
-    "3": 0x2C03,
-    "4": 0x2C04,
-    "5": 0x2C05,
-    "6": 0x2C06,
-    "7": 0x2C07,
-    "8": 0x2C08,
-    "9": 0x2C09,
-    "0": 0x2C00,
-    "%": 0x2C0A,
+    "A": 0x3CE0,
+    "B": 0x3CE1,
+    "C": 0x3CE2,
+    "D": 0x3CE3,
+    "E": 0x3CE4,
+    "F": 0x3CE5,
+    "G": 0x3CE6,
+    "H": 0x3CE7,
+    "I": 0x3CE8,
+    "J": 0x3CE9,
+    "K": 0x3CEA,
+    "L": 0x3CEB,
+    "M": 0x3CEC,
+    "N": 0x3CED,
+    "O": 0x3CEE,
+    "P": 0x3CEF,
+    "Q": 0x3CF0,
+    "R": 0x3CF1,
+    "S": 0x3CF2,
+    "T": 0x3CF3,
+    "U": 0x3CF4,
+    "V": 0x3CF5,
+    "W": 0x3CF6,
+    "X": 0x3CF7,
+    "Y": 0x3CF8,
+    "Z": 0x3CF9,
+    " ": 0x3C4E,
+    "!": 0x3CFF,
+    "?": 0x3CFE,
+    "'": 0x3CFD,
+    ",": 0x3CFB,
+    ".": 0x3CFA,
+    "-": 0x3CCF,
+    "_": 0x000E,
+    "1": 0x3C00,
+    "2": 0x3C01,
+    "3": 0x3C02,
+    "4": 0x3C03,
+    "5": 0x3C04,
+    "6": 0x3C05,
+    "7": 0x3C06,
+    "8": 0x3C07,
+    "9": 0x3C08,
+    "0": 0x3C09,
+    "%": 0x3C0A
 }
 """ item names use this, player names are ascii """
 
@@ -82,7 +81,7 @@ def make_item_name_for_rom(item_name: str) -> bytearray:
     assert len(item_name) == 32, f"{len(item_name)=}"
 
     for char in item_name:
-        w0, w1 = get_word_array(box_blue_tbl.get(char, 0x2C0F))
+        w0, w1 = get_word_array(box_blue_tbl.get(char, 0x3C4E))
         data.append(w0)
         data.append(w1)
     assert len(data) == 64, f"{len(data)=}"
@@ -110,14 +109,14 @@ def offset_from_symbol(symbol: str) -> int:
 
 _item_sprites = [
     {
-        "fileName":          "off_world_prog_item.bin",
+        "fileName": "off_world_prog_item.bin",
         "paletteSymbolName": "prog_item_eight_palette_indices",
-        "dataSymbolName":    "offworld_graphics_data_progression_item"
+        "dataSymbolName": "offworld_graphics_data_progression_item"
     },
     {
-        "fileName":          "off_world_item.bin",
+        "fileName": "off_world_item.bin",
         "paletteSymbolName": "nonprog_item_eight_palette_indices",
-        "dataSymbolName":    "offworld_graphics_data_item"
+        "dataSymbolName": "offworld_graphics_data_item"
     }
 ]
 
@@ -136,13 +135,12 @@ def patch_item_sprites(rom: Union[bytes, bytearray]) -> bytearray:
         palette_offset = offset_from_symbol(item_sprite["paletteSymbolName"])
         data_offset = offset_from_symbol(item_sprite["dataSymbolName"])
         with open_file_apworld_compatible(
-            path.joinpath("data", "custom_sprite", item_sprite["fileName"]), 'rb'
+                path.joinpath("data", "custom_sprite", item_sprite["fileName"]), 'rb'
         ) as file:
             offworld_data = file.read()
             tr[palette_offset:palette_offset + 8] = offworld_data[0:8]
             tr[data_offset:data_offset + 256] = offworld_data[8:264]
     return tr
-
 
 
 class _DestinationType(IntEnum):
@@ -277,8 +275,8 @@ class ItemRomData:
 
     @staticmethod
     def patch_from_json(
-        rom: Union[bytes, bytearray],
-        json_result: ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON
+            rom: Union[bytes, bytearray],
+            json_result: ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON
     ) -> bytearray:
         tr = bytearray(rom)
         item_names_after_constants, item_table, player_names, sorted_player_ids = json_result
@@ -309,10 +307,12 @@ def ips_patch_from_file(ips_file_name: Union[str, Path], input_bytes: Union[byte
         ips_data = ips_file.read()
     return ips_patch(input_bytes, ips_data)
 
+
 def get_multi_patch_path() -> Path:
     """ multiworld-basepatch.ips """
     path = Path(__file__).parent.resolve()
     return path.joinpath("data", "ap_super_junkoid_patch", "multiworld-basepatch.ips")
+
 
 @dataclass
 class GenData:

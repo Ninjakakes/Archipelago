@@ -10,13 +10,15 @@ from super_junkoid_randomizer.fillAssumed import FillAssumed
 
 classifications: Dict[str, IC] = defaultdict(lambda: IC.progression)
 classifications.update({
-    Items.LuckyFrog[0]: IC.useful,
+    Items.LuckyFrog[0]: IC.filler,
     Items.DeathGem[0]: IC.useful,
-    Items.WaveBangle[0]: IC.useful,
+    Items.BigLeagueGlove[0]: IC.useful,
+    Items.WaveBangle[0]: IC.filler,
     Items.MagicSoap[0]: IC.useful,
-    Items.Heart[0]: IC.useful,  # 12 progression set by create_items
-    Items.Baseball[0]: IC.useful,  # 5 progression set by create_items
-    Items.Sparksuit[0]: IC.useful  # 1 progression set by create_items
+    Items.DreamersCrown[0]: IC.useful,
+    Items.Heart[0]: IC.filler,  # 12 progression set by create_items
+    Items.Baseball[0]: IC.filler,  # 5 progression set by create_items
+    Items.Sparksuit[0]: IC.filler  # 1 progression set by create_items
 })
 
 
