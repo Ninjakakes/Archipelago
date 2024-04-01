@@ -4,14 +4,13 @@ from threading import Event
 from typing import Optional, Union, Dict, Any
 
 from BaseClasses import ItemClassification, Region, CollectionState, MultiWorld
-from Options import PerGameCommonOptions
 from worlds.AutoWorld import WebWorld, World
 
 from .client import SuperJunkoidSNIClient
 from .location import name_to_id as _loc_name_to_id, SuperJunkoidLocation
 from .item import name_to_id as _item_name_to_id, SuperJunkoidItem, names_for_item_pool
 from .logic import cs_to_loadout, can_win
-from .options import make_sj_game
+from .options import make_sj_game, SuperJunkoidOptions
 
 from super_junkoid_randomizer.game import Game as SjGame
 from super_junkoid_randomizer.defaultLogic import location_logic
@@ -36,8 +35,8 @@ class SuperJunkoidWorld(World):
     data_version = 0
     web = SuperJunkoidWebWorld()
 
-    options_dataclass = PerGameCommonOptions
-    options: PerGameCommonOptions
+    options_dataclass = SuperJunkoidOptions
+    options: SuperJunkoidOptions
 
     location_name_to_id = _loc_name_to_id
     item_name_to_id = _item_name_to_id
@@ -56,8 +55,14 @@ class SuperJunkoidWorld(World):
         return SuperJunkoidItem(name, self.player)
 
     def generate_early(self) -> None:
+        if self.options.first_item == "none":
+            return
+
         early_items = ["Feather", "Wallkicks", "Magic Broom"]
-        early_item = self.multiworld.random.choice(early_items)
+        if self.options.first_item == "any":
+            early_item = self.multiworld.random.choice(early_items)
+        else:
+            early_item = early_items[self.options.first_item.value - 1]
         self.multiworld.local_early_items[self.player][early_item] = 1
 
     def create_regions(self) -> None:

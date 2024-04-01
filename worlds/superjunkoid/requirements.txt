@@ -1,1 +1,1 @@
-super_junkoid_randomizer @ git+https://github.com/Ninjakakes/SuperJunkoidRandomizer@5b37208865ab725c261b6a9cf5c1c7031b9412d8#0.1.1
+super_junkoid_randomizer @ git+https://github.com/Ninjakakes/SuperJunkoidRandomizer@9dd76ad02d6e7c335d797150c21dc4b213fb660c#0.1.2
