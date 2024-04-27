@@ -111,13 +111,17 @@ def write_rom_from_gen_data(gen_data_str: str, output_rom_file_name: str) -> Non
             for address in loc["altlocationids"]:
                 rom_writer.writeItem(address, plmid, AP_ITEM[4])
 
-    # TODO: deathlink
-    # self.multiworld.death_link[self.player].value
-    offset_from_symbol("config_deathlink")
+    options = gen_data.item_rom_data[4]
+    death_link_offset = offset_from_symbol("config_deathlink")
+    death_link_value = 0b0
+    if options["deathLink"]:
+        death_link_value = 0b1
+    rom_writer.writeBytes(death_link_offset, death_link_value.to_bytes(1, "little"))
 
     remote_items_offset = offset_from_symbol("config_remote_items")
     remote_items_value = 0b101
-    # TODO: if remote items: |= 0b10
+    if options["remoteItem"]:
+        remote_items_value |= 0b010
     rom_writer.writeBytes(remote_items_offset, remote_items_value.to_bytes(1, "little"))
 
     player_id_offset = offset_from_symbol("config_player_id")

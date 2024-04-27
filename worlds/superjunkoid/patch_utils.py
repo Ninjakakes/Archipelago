@@ -8,6 +8,7 @@ from pathlib import Path
 from super_junkoid_randomizer.romWriter import RomWriter
 
 from BaseClasses import Location, ItemClassification
+from worlds.superjunkoid.options import SuperJunkoidOptions
 from worlds.superjunkoid.location import SuperJunkoidLocation
 from worlds.superjunkoid.config import base_id, open_file_apworld_compatible
 from worlds.superjunkoid.item import local_id_to_sj_item, SuperJunkoidItem
@@ -165,9 +166,11 @@ class _ItemTableEntry:
 
 NUM_ITEMS_WITH_ICONS = len(local_id_to_sj_item)
 
-ItemNames_ItemTable_PlayerNames_PlayerIDs = Tuple[List[bytearray], Dict[int, _ItemTableEntry], bytearray, List[int]]
+ItemNames_ItemTable_PlayerNames_PlayerIDs_Options = Tuple[
+    List[bytearray], Dict[int, _ItemTableEntry], bytearray, List[int]], Dict[str, int]
 
-ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON = Tuple[List[List[int]], Dict[str, List[int]], List[int], List[int]]
+ItemNames_ItemTable_PlayerNames_PlayerIDs_Options_JSON = Tuple[
+    List[List[int]], Dict[str, List[int]], List[int], List[int], Dict[str, int]]
 
 
 class ItemRomData:
@@ -178,12 +181,15 @@ class ItemRomData:
     player_ids: Set[int]
     """ all the players I interact with (including myself and 0 (the server player)) """
     player_id_to_name: Mapping[int, str]
+    """my options for this game"""
+    options: SuperJunkoidOptions
 
-    def __init__(self, my_player_id: int, player_id_to_name: Mapping[int, str]) -> None:
+    def __init__(self, my_player_id: int, player_id_to_name: Mapping[int, str], options: SuperJunkoidOptions) -> None:
         self.player = my_player_id
         self.my_locations = []
         self.player_ids = {0, my_player_id}
         self.player_id_to_name = player_id_to_name
+        self.options = options
 
     def register(self, loc: Location) -> None:
         """ call this with every multiworld location """
@@ -200,7 +206,7 @@ class ItemRomData:
                 # my item in someone else's location
                 self.player_ids.add(loc.player)
 
-    def _make_tables(self) -> ItemNames_ItemTable_PlayerNames_PlayerIDs:
+    def _make_tables(self) -> ItemNames_ItemTable_PlayerNames_PlayerIDs_Options:
         """ after all locations are registered """
         item_table: Dict[int, _ItemTableEntry] = {}
 
@@ -260,26 +266,32 @@ class ItemRomData:
             this_name = self.player_id_to_name[player_id].upper().encode("ascii", "ignore")[:16].center(16)
             player_names.extend(this_name)
 
-        return item_names_after_constants, item_table, player_names, sorted_player_ids
+        options: Dict[str, int] = {
+            "remoteItem": self.options.remote_items.value,
+            "deathLink": self.options.death_link.value
+        }
 
-    def get_jsonable_data(self) -> ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON:
+        return item_names_after_constants, item_table, player_names, sorted_player_ids, options
+
+    def get_jsonable_data(self) -> ItemNames_ItemTable_PlayerNames_PlayerIDs_Options_JSON:
         """ data that can be encoded to json, and can be passed to `patch_from_json` """
-        item_names_after_constants, item_table, player_names, sorted_player_ids = self._make_tables()
+        item_names_after_constants, item_table, player_names, sorted_player_ids, options = self._make_tables()
 
         return (
             [list(item_name) for item_name in item_names_after_constants],
             {str(loc_id): list(entry.to_bytes()) for loc_id, entry in item_table.items()},
             list(player_names),
-            sorted_player_ids
+            sorted_player_ids,
+            options
         )
 
     @staticmethod
     def patch_from_json(
             rom: Union[bytes, bytearray],
-            json_result: ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON
+            json_result: ItemNames_ItemTable_PlayerNames_PlayerIDs_Options_JSON
     ) -> bytearray:
         tr = bytearray(rom)
-        item_names_after_constants, item_table, player_names, sorted_player_ids = json_result
+        item_names_after_constants, item_table, player_names, sorted_player_ids, options = json_result
 
         item_names_offset = offset_from_symbol("message_item_names") + 64 * NUM_ITEMS_WITH_ICONS
         concat_bytes = bytes(chain.from_iterable(item_names_after_constants))
@@ -316,7 +328,7 @@ def get_multi_patch_path() -> Path:
 
 @dataclass
 class GenData:
-    item_rom_data: ItemNames_ItemTable_PlayerNames_PlayerIDs_JSON
+    item_rom_data: ItemNames_ItemTable_PlayerNames_PlayerIDs_Options_JSON
     sj_game: SjGame
     player: int
     game_name_in_rom: Union[bytes, bytearray]

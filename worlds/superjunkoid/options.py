@@ -4,8 +4,13 @@ from typing import Union
 from super_junkoid_randomizer.defaultLogic import Default
 from super_junkoid_randomizer.game import Game
 
-from Options import Choice, PerGameCommonOptions
+from Options import Choice, PerGameCommonOptions, Toggle, DeathLink
 from worlds.superjunkoid.location import location_data
+
+
+class SuperJunkoidRemoteItem(Toggle):
+    """Indicates you get items sent from your own world. This allows coop play of a world."""
+    display_name = "Remote Items"
 
 
 class SuperJunkoidFirstItem(Choice):
@@ -22,9 +27,12 @@ class SuperJunkoidFirstItem(Choice):
     option_none = 4
     default = 0
 
+
 @dataclass
 class SuperJunkoidOptions(PerGameCommonOptions):
+    remote_items: SuperJunkoidRemoteItem
     first_item: SuperJunkoidFirstItem
+    death_link: DeathLink
 
 
 def make_sj_game(seed: Union[int, None]) -> Game:

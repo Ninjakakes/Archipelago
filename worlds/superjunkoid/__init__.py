@@ -125,7 +125,7 @@ class SuperJunkoidWorld(World):
     def generate_output(self, output_directory: str) -> None:
         assert self.sj_game, "can't call generate_output without create_regions"
 
-        item_rom_data = ItemRomData(self.player, self.multiworld.player_name)
+        item_rom_data = ItemRomData(self.player, self.multiworld.player_name, self.options)
         for loc in self.multiworld.get_locations():
             item_rom_data.register(loc)
 
