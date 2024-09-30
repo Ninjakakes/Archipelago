@@ -1,6 +1,6 @@
 from typing import Iterator, Tuple
 
-from super_junkoid_randomizer.defaultLogic import junkraid, junkgon, junkoon, junkly
+from super_junkoid_randomizer.defaultLogic import killJunkraid, killJunkgon, junkoon, junkly
 from super_junkoid_randomizer.game import Game
 from super_junkoid_randomizer.loadout import Loadout
 from super_junkoid_randomizer.logic_shortcut import LogicShortcut
@@ -11,7 +11,7 @@ from .item import name_to_id as item_name_to_id, id_to_sj_item
 
 
 can_win = LogicShortcut(lambda loadout: (
-        (junkraid in loadout) and (junkgon in loadout) and (junkoon in loadout) and (junkly in loadout)
+        (killJunkraid in loadout) and (killJunkgon in loadout) and (junkoon in loadout) and (junkly in loadout)
 ))
 
 def item_counts(cs: CollectionState, p: int) -> Iterator[Tuple[str, int]]:
