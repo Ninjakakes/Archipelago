@@ -40,6 +40,7 @@ SM_REMOTE_ITEM_FLAG_ADDR = ROM_START + offset_from_symbol("config_remote_items")
 
 class SuperJunkoidSNIClient(SNIClient):
     game = "Super Junkoid"
+    patch_suffix = ".apsj"
 
     async def deathlink_kill_player(self, ctx: "SNIContext") -> None:
         from SNIClient import DeathState, snes_buffered_write, snes_flush_writes, snes_read
