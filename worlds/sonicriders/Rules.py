@@ -306,9 +306,9 @@ def set_rules(multiworld: MultiWorld, world: World, player: int):
             elif loc.chrId is not None:  # Default Gear
                 rule = lambda state, c=CHR_ID_TO_NAME[loc.chrId]: state.has(c, player)
             else:
-                valid_chrs = [CHR_ID_TO_NAME[c] for c in GEAR_TO_CHR[gear_id]]
-                rule = lambda state, g=GEAR_ID_TO_NAME[gear_id]: \
-                    state.has(g, player) and state.has_any(valid_chrs, player)
+                valid_chrs = tuple([CHR_ID_TO_NAME[c] for c in GEAR_TO_CHR[gear_id]])
+                rule = lambda state, g=GEAR_ID_TO_NAME[gear_id], c=valid_chrs: \
+                    state.has(g, player) and state.has_any(c, player)
             add_rule(mw_gear_loc, rule)
 
     super_item = [g for g in gear_items if g.gearId == GEAR_CHAOS_EMERALD][0]
