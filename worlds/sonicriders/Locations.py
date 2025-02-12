@@ -99,8 +99,9 @@ def create_locations(world, regions: Dict[str, Region]):
     menu_region = regions["Menu"]
 
     for loc in final_location:
-        location = SonicRidersLocation(world.player, loc.name, loc.locationId + BASE_ID, menu_region)
-        menu_region.locations.append(location)
+        bab_guard_region = regions[STAGE_ID_TO_NAME[STAGE_BABYLON_GUARDIAN]]
+        location = SonicRidersLocation(world.player, loc.name, loc.locationId + BASE_ID, bab_guard_region)
+        bab_guard_region.locations.append(location)
 
     for loc in gear_complete_locations:
         location = SonicRidersLocation(world.player, loc.name, loc.locationId + BASE_ID, menu_region)
