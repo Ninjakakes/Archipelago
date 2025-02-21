@@ -1,4 +1,5 @@
 import asyncio
+import time
 import traceback
 from typing import Optional
 
@@ -11,7 +12,8 @@ from NetUtils import ClientStatus
 from worlds.sonicriders.Items import Junk
 from .Constants import BASE_ID
 from . import Locations, Items, CHR_EGGMAN, GEAR_E_RIDER, CHR_SHADOW, GEAR_DARKNESS, GEAR_DEFAULT, STAGE_ID_TO_NAME, \
-    CHR_ID_TO_NAME, GEAR_ID_TO_NAME, CHR_SUPER_SONIC, CHR_SONIC, STAGE_BABYLON_GUARDIAN, GEAR_CHAOS_EMERALD, CHR_WAVE
+    CHR_ID_TO_NAME, GEAR_ID_TO_NAME, CHR_SUPER_SONIC, CHR_SONIC, STAGE_BABYLON_GUARDIAN, GEAR_CHAOS_EMERALD, CHR_WAVE, \
+    Options
 
 CONNECTION_REFUSED_GAME_STATUS = (
     "Dolphin failed to connect. Please load a ROM for Sonic Riders. Currently {1}. Trying again in 5 seconds..."
@@ -41,9 +43,11 @@ class GAME_ADDRESSES:
     CURRENT_STAGE = 0x806129A8
     PLAYER_CHR = 0x806094FA
     PLAYER_GEAR = 0x806094FB
+    PLAYER_POS = 0x8060A46D
     PLAYER_RINGS = 0x80609FD8
     PLAYER_FINISH_TIME = 0x8060A434
     PLAYER_LAP = 0x8060A46A
+    PLAYER_STATE = 0x8060A474
 
 
 class GAME_STATES:
@@ -62,6 +66,29 @@ class SonicRidersCommandProcessor(ClientCommandProcessor):
         if isinstance(self.ctx, SonicRidersContext):
             logger.info(f"Dolphin Status: {self.ctx.dolphin_status}")
 
+    def _cmd_ringlink(self):
+        """Toggle Ring Link"""
+        if isinstance(self.ctx, SonicRidersContext):
+            if self.ctx.ring_link == Options.RingLink.option_off:
+                self.ctx.ring_link = Options.RingLink.option_on
+            else:
+                self.ctx.ring_link = Options.RingLink.option_off
+
+    def _cmd_hard_ringlink(self):
+        """Toggle Hard Ring Link"""
+        if isinstance(self.ctx, SonicRidersContext):
+            if self.ctx.ring_link == Options.RingLink.option_off:
+                self.ctx.ring_link = Options.RingLink.option_hard
+            else:
+                self.ctx.ring_link = Options.RingLink.option_on
+
+    def _cmd_deathlink(self):
+        """Toggle Death Link"""
+        if isinstance(self.ctx, SonicRidersContext):
+            if self.ctx.death_link:
+                self.ctx.death_link = False
+            else:
+                self.ctx.death_link = True
 
 class SonicRidersContext(CommonContext):
     command_processor = SonicRidersCommandProcessor
@@ -79,23 +106,45 @@ class SonicRidersContext(CommonContext):
         self.invalid_rom = False
         self.last_rcvd_index = -1
         self.has_send_death = False
+        self.has_received_death = False
         self.unlocked_stages = []
         self.unlocked_chrs = []
         self.unlocked_gears = [GEAR_DEFAULT]
 
         self.items_to_handle = []
         self.handled = []
+        self.ring_link = False
+        self.death_link = False
+        self.stage_top_three = False
+        self.stage_first_place = False
+        self.chr_top_three = False
+        self.chr_first_place = False
+        self.gear_top_three = False
+        self.gear_first_place = False
 
         self.junk_delay = 0
 
         self.emeralds = []
 
+        self.game_tags = ["AP"]
+        self.previous_rings = None
+        self.instance_id = time.time()
+        self.ring_link_rings = 0
+        self.has_died = False
+
         self.initialised = False
         self.stage_loading = False
+        self.finish_handled = True
 
     async def disconnect(self, allow_autoreconnect: bool = False):
         self.auth = None
         await super().disconnect(allow_autoreconnect)
+
+    def on_deathlink(self, data):
+        if not self.death_link:
+            return
+        super().on_deathlink(data)
+        self.has_received_death = True
 
     def run_gui(self):
         from kvui import GameManager
@@ -126,6 +175,32 @@ class SonicRidersContext(CommonContext):
 
     def on_package(self, cmd: str, args: dict):
         if cmd == "Connected":
+            slot_data = args["slot_data"]
+
+            if "ring_link" in slot_data:
+                self.ring_link = slot_data["ring_link"]
+
+            if "death_link" in slot_data:
+                self.death_link = slot_data["death_link"]
+
+            if "stage_top_three" in slot_data:
+                self.stage_top_three = slot_data["stage_top_three"]
+
+            if "stage_first_place" in slot_data:
+                self.stage_first_place = slot_data["stage_first_place"]
+
+            if "chr_top_three" in slot_data:
+                self.chr_top_three = slot_data["chr_top_three"]
+
+            if "chr_first_place" in slot_data:
+                self.chr_first_place = slot_data["chr_first_place"]
+
+            if "gear_top_three" in slot_data:
+                self.gear_top_three = slot_data["gear_top_three"]
+
+            if "gear_first_place" in slot_data:
+                self.gear_first_place = slot_data["gear_first_place"]
+
             self.awaiting_server = False
         elif cmd == "ReceivedItems":
             if args["index"] >= self.last_rcvd_index:
@@ -134,6 +209,11 @@ class SonicRidersContext(CommonContext):
                     self.items_to_handle.append((item, self.last_rcvd_index))
                     self.last_rcvd_index += 1
             self.items_to_handle.sort(key=lambda v: v[1])
+        elif cmd == "Bounced":
+            if "tags" in args:
+                related_tags = args["tags"]
+                if "RingLink" in related_tags or "HardRingLink" in related_tags:
+                    handle_received_rings(self, args["data"])
 
 
 async def check_save_loaded(ctx):
@@ -163,7 +243,9 @@ async def check_stage_status(ctx):
     last_unlocked_chrs = ctx.unlocked_chrs.copy()
     last_unlocked_gears = ctx.unlocked_gears.copy()
 
-    (final_location, stage_complete_locations, gear_complete_locations, chr_complete_locations,
+    (final_location, stage_complete_locations, stage_top_three, stage_first_place,
+     gear_complete_locations, gear_top_three, gear_first_place,
+     chr_complete_locations, chr_top_three, chr_first_place,
      super_sonic_location) = Locations.get_all_location_info()
 
     info = Items.get_item_lookup_dict()
@@ -286,6 +368,7 @@ async def check_stage_status(ctx):
         finish_time = bytearray(3)
         dolphin_memory_engine.write_bytes(GAME_ADDRESSES.PLAYER_FINISH_TIME, bytes(finish_time))
         ctx.stage_loading = True
+        ctx.finish_handled = False
         default = bytearray(17)
         for i in range(17):
             default[i] = 1
@@ -306,6 +389,113 @@ async def check_stage_status(ctx):
             return None
 
     return current_stage
+
+
+async def handle_death_link(ctx, stage):
+    death_link = False
+    old_tags = ctx.game_tags.copy()
+    if ctx.death_link:
+        if "DeathLink" not in ctx.game_tags:
+            ctx.game_tags.append("DeathLink")
+        death_link = True
+    else:
+        if "DeathLink" in ctx.game_tags:
+            ctx.game_tags.remove("DeathLink")
+
+    if old_tags != ctx.game_tags and ctx.server and not ctx.server.socket.closed:
+        await ctx.send_msgs([{"cmd": "ConnectUpdate", "tags": ctx.game_tags}])
+
+    if stage is None or not death_link:
+        return
+
+    player_state = dolphin_memory_engine.read_bytes(GAME_ADDRESSES.PLAYER_STATE, 1)
+    player_state = int.from_bytes(player_state, byteorder="big")
+
+    if player_state == 3 and not ctx.has_died:
+        ctx.has_died = True
+        await ctx.send_death(f"{ctx.player_names[ctx.slot]} has died")  # TODO add custom death messages
+        # print(f"{ctx.player_names[ctx.slot]} has died")
+    elif player_state == 5 and ctx.has_received_death and not ctx.has_died:
+        ctx.has_died = True
+        ctx.has_received_death = False
+        respawn = (3).to_bytes(byteorder="big")
+        dolphin_memory_engine.write_bytes(GAME_ADDRESSES.PLAYER_STATE, respawn)
+    elif player_state != 3:
+        ctx.has_died = False
+
+
+def handle_received_rings(ctx, data):
+    amount = data["amount"]
+    source = data["source"]
+
+    if source == ctx.instance_id:
+        return
+
+    should_receive = True
+
+    if should_receive:
+        ctx.ring_link_rings += amount
+        ctx.previous_rings = None
+
+
+async def handle_ring_link(ctx, stage):
+    ring_link = False
+    hard_ring_link = False
+    old_tags = ctx.game_tags.copy()
+    if ctx.ring_link != Options.RingLink.option_off:
+        if "RingLink" not in ctx.game_tags:
+            ctx.game_tags.append("RingLink")
+        ring_link = True
+        if ctx.ring_link == Options.RingLink.option_hard:
+            if "HardRingLink" not in ctx.game_tags:
+                ctx.game_tags.append("HardRingLink")
+            hard_ring_link = True
+        else:
+            if "HardRingLink" in ctx.game_tags:
+                ctx.game_tags.remove('HardRingLink')
+    else:
+        if "RingLink" in ctx.game_tags:
+            ctx.game_tags.remove('RingLink')
+        if "HardRingLink" in ctx.game_tags:
+            ctx.game_tags.remove('HardRingLink')
+
+    if old_tags != ctx.game_tags and ctx.server and not ctx.server.socket.closed:
+        await ctx.send_msgs([{"cmd": "ConnectUpdate", "tags": ctx.game_tags}])
+
+    if stage is None or not ring_link:
+        ctx.previous_rings = None
+        return
+
+    should_send = True
+    difference = 0
+    if should_send:
+        previous = ctx.previous_rings
+        current_rings_bytes = dolphin_memory_engine.read_bytes(GAME_ADDRESSES.PLAYER_RINGS, 4)
+        current_rings = int.from_bytes(current_rings_bytes, byteorder="big")
+
+        if ctx.previous_rings is None:
+            ctx.previous_rings = current_rings
+        else:
+            ctx.previous_rings = current_rings
+            difference = current_rings - previous
+            # if difference != 0:
+            #     print("ring diff=", difference)
+    else:
+        ctx.previous_rings = None
+
+    if difference != 0:
+        msg = {
+            "cmd": "Bounce",
+            "slots": [ctx.slot],
+            "data": {
+                "time": time.time(),
+                "source": ctx.instance_id,
+                "amount": difference
+            },
+            "tags": "RingLink"
+        }
+
+        await ctx.send_msgs([msg])
 
 
 async def handle_junk(ctx, current_stage):
@@ -346,7 +536,9 @@ async def handle_junk(ctx, current_stage):
 
     ring_limit = 100
 
-    if len(filler_rings) > 0:
+    ring_link_available = True
+
+    if (len(filler_rings) > 0 or ctx.ring_link_rings != 0) and ring_link_available:
         current_rings = dolphin_memory_engine.read_bytes(GAME_ADDRESSES.PLAYER_RINGS, 4)
         current_rings = int.from_bytes(current_rings)
         rings_changed = False
@@ -358,6 +550,15 @@ async def handle_junk(ctx, current_stage):
             current_rings += ring_junk[1].value
             newly_handled.append(ring_junk[0])
             rings_changed = True
+
+        if ctx.ring_link_rings != 0 and ctx.ring_link_rings is not None:
+            rings_changed = True
+            current_rings += ctx.ring_link_rings
+            if current_rings < 0:
+                current_rings = 0
+            if current_rings > 100:
+                current_rings = 100
+            ctx.ring_link_rings = 0
 
         if rings_changed:
             new_bytes = current_rings.to_bytes(4, byteorder='big')
@@ -377,7 +578,9 @@ async def handle_junk(ctx, current_stage):
 
 
 async def update_stage_behaviour(ctx, current_stage):
-    (final_location, stage_complete_locations, gear_complete_locations, chr_complete_locations,
+    (final_location, stage_complete_locations, stage_top_three, stage_first_place,
+     gear_complete_locations, gear_top_three, gear_first_place,
+     chr_complete_locations, chr_top_three, chr_first_place,
      super_sonic_location) = Locations.get_all_location_info()
 
     info = Items.get_item_lookup_dict()
@@ -394,16 +597,59 @@ async def update_stage_behaviour(ctx, current_stage):
     finish_time = [t for t in finish_time]
 
     messages = []
-    if finish_time[0] != 0 or finish_time[1] != 0 or finish_time[2] != 0:
+    if (finish_time[0] != 0 or finish_time[1] != 0 or finish_time[2] != 0) and not ctx.finish_handled:
+
+        player_pos = dolphin_memory_engine.read_bytes(GAME_ADDRESSES.PLAYER_POS, 11)
+        player_pos = int.from_bytes(player_pos)
+
+        if ctx.ring_link == Options.RingLink.option_hard:
+            current_rings_bytes = dolphin_memory_engine.read_bytes(GAME_ADDRESSES.PLAYER_RINGS, 4)
+            current_rings = int.from_bytes(current_rings_bytes, byteorder="big")
+            if current_rings > 0:
+                # print("Hard Ring Link: ", -current_rings)
+
+                msg = {
+                    "cmd": "Bounce",
+                    "slots": [ctx.slot],
+                    "data": {
+                        "time": time.time(),
+                        "source": ctx.instance_id,
+                        "amount": -current_rings
+                    },
+                    "tags": "HardRingLink"
+                }
+
+                await ctx.send_msgs([msg])
+
         for stage_complete_location in stage_complete_locations:
             if stage_complete_location.stageId == current_stage:
                 messages.append(stage_complete_location.locationId + BASE_ID)
+
+        if player_pos >= 3 and ctx.stage_top_three:
+            for stage_complete_location in stage_top_three:
+                if stage_complete_location.stageId == current_stage:
+                    messages.append(stage_complete_location.locationId + BASE_ID)
+
+        if player_pos == 1 and ctx.stage_first_place:
+            for stage_complete_location in stage_first_place:
+                if stage_complete_location.stageId == current_stage:
+                    messages.append(stage_complete_location.locationId + BASE_ID)
 
         if player_chr == CHR_SUPER_SONIC:
             player_chr = CHR_SONIC
         for chr_complete_location in chr_complete_locations:
             if chr_complete_location.chrId == player_chr:
                 messages.append(chr_complete_location.locationId + BASE_ID)
+
+        if player_pos >= 3 and ctx.chr_top_three:
+            for chr_complete_location in chr_top_three:
+                if chr_complete_location.chrId == player_chr:
+                    messages.append(chr_complete_location.locationId + BASE_ID)
+
+        if player_pos == 1 and ctx.chr_first_place:
+            for chr_complete_location in chr_first_place:
+                if chr_complete_location.chrId == player_chr:
+                    messages.append(chr_complete_location.locationId + BASE_ID)
 
         for gear_complete_location in gear_complete_locations:
             if gear_complete_location.gearId == player_gear:
@@ -413,11 +659,31 @@ async def update_stage_behaviour(ctx, current_stage):
                 else:
                     messages.append(gear_complete_location.locationId + BASE_ID)
 
+        if player_pos >= 3 and ctx.gear_top_three:
+            for gear_complete_location in gear_top_three:
+                if gear_complete_location.gearId == player_gear:
+                    if player_gear == GEAR_DEFAULT:
+                        if gear_complete_location.chrId == player_chr:
+                            messages.append(gear_complete_location.locationId + BASE_ID)
+                    else:
+                        messages.append(gear_complete_location.locationId + BASE_ID)
+
+        if player_pos == 1 and ctx.gear_first_place:
+            for gear_complete_location in gear_top_three:
+                if gear_complete_location.gearId == player_gear:
+                    if player_gear == GEAR_DEFAULT:
+                        if gear_complete_location.chrId == player_chr:
+                            messages.append(gear_complete_location.locationId + BASE_ID)
+                    else:
+                        messages.append(gear_complete_location.locationId + BASE_ID)
+
         if current_stage == STAGE_BABYLON_GUARDIAN and player_gear == GEAR_CHAOS_EMERALD:
             await ctx.send_msgs([{
                 "cmd": "StatusUpdate",
                 "status": ClientStatus.CLIENT_GOAL,
             }])
+
+        ctx.finish_handled = True
 
     if len(messages) > 0:
         message = [{"cmd": 'LocationChecks', "locations": messages}]
@@ -427,7 +693,6 @@ async def update_stage_behaviour(ctx, current_stage):
 async def dolphin_sync_task(ctx: SonicRidersContext):
     logger.info("Starting Dolphin connector. Use /dolphin for status information.")
     while not ctx.exit_event.is_set():
-        death = False
         try:
             if ctx.slot is not None:
                 pass
@@ -457,6 +722,9 @@ async def dolphin_sync_task(ctx: SonicRidersContext):
                     stage = await check_stage_status(ctx)
                     if stage is not None:
                         await update_stage_behaviour(ctx, stage)
+
+                    await handle_death_link(ctx, stage)
+                    await handle_ring_link(ctx, stage)
 
                 await asyncio.sleep(0.1)
             else:

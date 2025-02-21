@@ -1,4 +1,4 @@
-from typing import ClassVar, Dict
+from typing import ClassVar, Dict, Mapping, Any
 
 from BaseClasses import Tutorial, Item
 from worlds.AutoWorld import World, WebWorld
@@ -6,6 +6,7 @@ from worlds.LauncherComponents import components, Component, Type, launch_subpro
 
 from . import Regions, Locations, Rules
 from .Items import SonicRidersItem
+from .Options import SonicRidersOptions
 from .Stages import *
 from .Gears import *
 from .Characters import *
@@ -40,12 +41,17 @@ class SonicRidersWeb(WebWorld):
 
 
 class SonicRidersWorld(World):
-    """In Sonic Riders, Dr. Eggman challenges Sonic and his friends to a Worldwide Grand Prix, and the prize for 
+    """
+    In Sonic Riders, Dr. Eggman challenges Sonic and his friends to a Worldwide Grand Prix, and the prize for
     coming out on top is an ultra-rare Chaos Emerald! Gliding on air boards – which are performance-oriented for each 
     playable character – gamers will experience a heightened sense of sports-style racing tension as Sonic and his 
-    pals perform tricks and stunts over treacherous wide-open terrain."""
+    pals perform tricks and stunts over treacherous wide-open terrain.
+    """
     game = "Sonic Riders"
     web = SonicRidersWeb()
+
+    options_dataclass = SonicRidersOptions
+    options: SonicRidersOptions
 
     required_client_version = (0, 5, 1)
 
@@ -77,7 +83,25 @@ class SonicRidersWorld(World):
         Items.populate_item_pool(self, self.first_stages, self.first_chrs)
 
     def get_filler_item_name(self) -> str:
-        return "Nothing"
+        final_items, emerald_items, stage_items, gear_items, chr_items, junk_items = Items.get_all_item_info()
+        item_info = Items.choose_junk_items(self.random, junk_items, self.options, 1)[0]
+        return item_info.name
+
+    def fill_slot_data(self) -> Mapping[str, Any]:
+        slot_data = {
+            "ring_link": self.options.ring_link.value,
+            "death_link": self.options.death_link.value,
+
+            "stage_top_three": self.options.stage_top_three.value,
+            "stage_first_place": self.options.stage_first_place.value,
+
+            "chr_top_three": self.options.character_top_three.value,
+            "chr_first_place": self.options.character_first_place.value,
+
+            "gear_top_three": self.options.gear_top_three.value,
+            "gear_first_place": self.options.gear_first_place.value,
+        }
+        return slot_data
 
     def set_rules(self) -> None:
         Rules.set_rules(self.multiworld, self, self.player)
