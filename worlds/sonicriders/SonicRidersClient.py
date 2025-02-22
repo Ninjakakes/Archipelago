@@ -90,6 +90,7 @@ class SonicRidersCommandProcessor(ClientCommandProcessor):
             else:
                 self.ctx.death_link = True
 
+
 class SonicRidersContext(CommonContext):
     command_processor = SonicRidersCommandProcessor
     game = "Sonic Riders"
@@ -599,7 +600,7 @@ async def update_stage_behaviour(ctx, current_stage):
     messages = []
     if (finish_time[0] != 0 or finish_time[1] != 0 or finish_time[2] != 0) and not ctx.finish_handled:
 
-        player_pos = dolphin_memory_engine.read_bytes(GAME_ADDRESSES.PLAYER_POS, 11)
+        player_pos = dolphin_memory_engine.read_bytes(GAME_ADDRESSES.PLAYER_POS, 1)
         player_pos = int.from_bytes(player_pos)
 
         if ctx.ring_link == Options.RingLink.option_hard:
@@ -625,12 +626,12 @@ async def update_stage_behaviour(ctx, current_stage):
             if stage_complete_location.stageId == current_stage:
                 messages.append(stage_complete_location.locationId + BASE_ID)
 
-        if player_pos >= 3 and ctx.stage_top_three:
+        if player_pos <= 2 and ctx.stage_top_three:
             for stage_complete_location in stage_top_three:
                 if stage_complete_location.stageId == current_stage:
                     messages.append(stage_complete_location.locationId + BASE_ID)
 
-        if player_pos == 1 and ctx.stage_first_place:
+        if player_pos == 0 and ctx.stage_first_place:
             for stage_complete_location in stage_first_place:
                 if stage_complete_location.stageId == current_stage:
                     messages.append(stage_complete_location.locationId + BASE_ID)
@@ -641,12 +642,12 @@ async def update_stage_behaviour(ctx, current_stage):
             if chr_complete_location.chrId == player_chr:
                 messages.append(chr_complete_location.locationId + BASE_ID)
 
-        if player_pos >= 3 and ctx.chr_top_three:
+        if player_pos <= 2 and ctx.chr_top_three:
             for chr_complete_location in chr_top_three:
                 if chr_complete_location.chrId == player_chr:
                     messages.append(chr_complete_location.locationId + BASE_ID)
 
-        if player_pos == 1 and ctx.chr_first_place:
+        if player_pos == 0 and ctx.chr_first_place:
             for chr_complete_location in chr_first_place:
                 if chr_complete_location.chrId == player_chr:
                     messages.append(chr_complete_location.locationId + BASE_ID)
@@ -659,7 +660,7 @@ async def update_stage_behaviour(ctx, current_stage):
                 else:
                     messages.append(gear_complete_location.locationId + BASE_ID)
 
-        if player_pos >= 3 and ctx.gear_top_three:
+        if player_pos <= 2 and ctx.gear_top_three:
             for gear_complete_location in gear_top_three:
                 if gear_complete_location.gearId == player_gear:
                     if player_gear == GEAR_DEFAULT:
@@ -668,8 +669,8 @@ async def update_stage_behaviour(ctx, current_stage):
                     else:
                         messages.append(gear_complete_location.locationId + BASE_ID)
 
-        if player_pos == 1 and ctx.gear_first_place:
-            for gear_complete_location in gear_top_three:
+        if player_pos == 0 and ctx.gear_first_place:
+            for gear_complete_location in gear_first_place:
                 if gear_complete_location.gearId == player_gear:
                     if player_gear == GEAR_DEFAULT:
                         if gear_complete_location.chrId == player_chr:
