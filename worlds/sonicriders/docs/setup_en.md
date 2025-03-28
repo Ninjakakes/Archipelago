@@ -9,7 +9,6 @@
 
 ### Configuring Game
 
-- Launch Dolphin, go to options - configuration - interface and tick Enable Debugging UI
 - Download the Python Dolphin Memory engine, and install into the lib folder of your Archipelago folder. 
 - Disable use of Emulated Memory Size override, as archipelago will not work with this setting.
 
