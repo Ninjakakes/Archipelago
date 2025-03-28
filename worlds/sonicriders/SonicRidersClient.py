@@ -53,6 +53,7 @@ class GAME_ADDRESSES:
 class GAME_STATES:
     LOADING = 0
     RACE = [1, 2]
+    RESTART = 4
     MAIN_MENU = 13
     STAGE_SELECT = 22
 
@@ -365,7 +366,7 @@ async def check_stage_status(ctx):
         message = [{"cmd": 'LocationChecks', "locations": messages}]
         await ctx.send_msgs(message)
 
-    if game_state in [GAME_STATES.LOADING, GAME_STATES.STAGE_SELECT]:
+    if game_state in [GAME_STATES.STAGE_SELECT, GAME_STATES.RESTART, GAME_STATES.LOADING]:
         finish_time = bytearray(3)
         dolphin_memory_engine.write_bytes(GAME_ADDRESSES.PLAYER_FINISH_TIME, bytes(finish_time))
         ctx.stage_loading = True
@@ -411,8 +412,11 @@ async def handle_death_link(ctx, stage):
 
     player_state = dolphin_memory_engine.read_bytes(GAME_ADDRESSES.PLAYER_STATE, 1)
     player_state = int.from_bytes(player_state, byteorder="big")
+    finish_time = bytearray(dolphin_memory_engine.read_bytes(GAME_ADDRESSES.PLAYER_FINISH_TIME, 3))
+    finish_time = [t for t in finish_time]
 
-    if player_state == 3 and not ctx.has_died:
+    if (player_state == 3 and not ctx.has_died and
+            not (finish_time[0] != 0 or finish_time[1] != 0 or finish_time[2] != 0)):
         ctx.has_died = True
         await ctx.send_death(f"{ctx.player_names[ctx.slot]} has died")  # TODO add custom death messages
         # print(f"{ctx.player_names[ctx.slot]} has died")
@@ -479,8 +483,8 @@ async def handle_ring_link(ctx, stage):
         else:
             ctx.previous_rings = current_rings
             difference = current_rings - previous
-            # if difference != 0:
-            #     print("ring diff=", difference)
+            if difference != 0:
+                print("ring diff=", difference)
     else:
         ctx.previous_rings = None
 
@@ -493,7 +497,7 @@ async def handle_ring_link(ctx, stage):
                 "source": ctx.instance_id,
                 "amount": difference
             },
-            "tags": "RingLink"
+            "tags": ["RingLink"]
         }
 
         await ctx.send_msgs([msg])
@@ -515,8 +519,11 @@ async def handle_junk(ctx, current_stage):
     current_lap = dolphin_memory_engine.read_bytes(GAME_ADDRESSES.PLAYER_LAP, 1)
     current_lap = int.from_bytes(current_lap)
 
-    if current_lap == 0:
-        return  # Race has not started don't "waste" filler
+    finish_time = bytearray(dolphin_memory_engine.read_bytes(GAME_ADDRESSES.PLAYER_FINISH_TIME, 3))
+    finish_time = [t for t in finish_time]
+
+    if current_lap == 0 or (finish_time[0] != 0 or finish_time[1] != 0 or finish_time[2] != 0):
+        return  # Race has not started or is finished don't "waste" filler
 
     last_index = dolphin_memory_engine.read_bytes(GAME_ADDRESSES.SAVED_INDEX, 4)
     last_index = int.from_bytes(last_index, signed=True)
@@ -598,16 +605,16 @@ async def update_stage_behaviour(ctx, current_stage):
     finish_time = [t for t in finish_time]
 
     messages = []
-    if (finish_time[0] != 0 or finish_time[1] != 0 or finish_time[2] != 0) and not ctx.finish_handled:
+    if finish_time[0] != 0 or finish_time[1] != 0 or finish_time[2] != 0:
 
         player_pos = dolphin_memory_engine.read_bytes(GAME_ADDRESSES.PLAYER_POS, 1)
         player_pos = int.from_bytes(player_pos)
 
-        if ctx.ring_link == Options.RingLink.option_hard:
+        if ctx.ring_link == Options.RingLink.option_hard and not ctx.finish_handled:
             current_rings_bytes = dolphin_memory_engine.read_bytes(GAME_ADDRESSES.PLAYER_RINGS, 4)
             current_rings = int.from_bytes(current_rings_bytes, byteorder="big")
             if current_rings > 0:
-                # print("Hard Ring Link: ", -current_rings)
+                print("Hard Ring Link: ", -current_rings)
 
                 msg = {
                     "cmd": "Bounce",
@@ -617,10 +624,11 @@ async def update_stage_behaviour(ctx, current_stage):
                         "source": ctx.instance_id,
                         "amount": -current_rings
                     },
-                    "tags": "HardRingLink"
+                    "tags": ["HardRingLink"]
                 }
 
                 await ctx.send_msgs([msg])
+                ctx.finish_handled = True
 
         for stage_complete_location in stage_complete_locations:
             if stage_complete_location.stageId == current_stage:
@@ -683,8 +691,7 @@ async def update_stage_behaviour(ctx, current_stage):
                 "cmd": "StatusUpdate",
                 "status": ClientStatus.CLIENT_GOAL,
             }])
-
-        ctx.finish_handled = True
+            messages.append(final_location[0].locationId+BASE_ID)
 
     if len(messages) > 0:
         message = [{"cmd": 'LocationChecks', "locations": messages}]
