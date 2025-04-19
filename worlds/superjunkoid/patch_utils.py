@@ -268,7 +268,8 @@ class ItemRomData:
 
         options: Dict[str, int] = {
             "remoteItem": self.options.remote_items.value,
-            "deathLink": self.options.death_link.value
+            "deathLink": self.options.death_link.value,
+            "fastSheol": self.options.fast_sheol.value,
         }
 
         return item_names_after_constants, item_table, player_names, sorted_player_ids, options

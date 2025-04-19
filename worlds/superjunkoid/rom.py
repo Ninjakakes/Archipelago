@@ -124,6 +124,16 @@ def write_rom_from_gen_data(gen_data_str: str, output_rom_file_name: str) -> Non
         remote_items_value |= 0b010
     rom_writer.writeBytes(remote_items_offset, remote_items_value.to_bytes(1, "little"))
 
+    if options["fastSheol"]:
+        rom_writer.writeBytes(0x01a0b4, b"\x36")
+        rom_writer.writeBytes(0x01a0b5, b"\xbd")
+        rom_writer.writeBytes(0x01a0b9, b"\x57")
+        rom_writer.writeBytes(0x01a0bb, b"\x05")
+        rom_writer.writeBytes(0x01a144, b"\xc5")
+        rom_writer.writeBytes(0x01a145, b"\x9b")
+        rom_writer.writeBytes(0x01a148, b"\x0e")
+        rom_writer.writeBytes(0x01a14a, b"\x00")
+
     player_id_offset = offset_from_symbol("config_player_id")
     rom_writer.writeBytes(player_id_offset, gen_data.player.to_bytes(2, "little"))
 

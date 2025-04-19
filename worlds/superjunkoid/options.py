@@ -27,11 +27,16 @@ class SuperJunkoidFirstItem(Choice):
     option_none = 4
     default = 0
 
+class SuperJunkoidFastSheol(Toggle):
+    """Skip most of the final area Sheol (Skips the Junkoids and the "Baby")"""
+    display_name = "Fast Sheol"
+
 
 @dataclass
 class SuperJunkoidOptions(PerGameCommonOptions):
     remote_items: SuperJunkoidRemoteItem
     first_item: SuperJunkoidFirstItem
+    fast_sheol: SuperJunkoidFastSheol
     death_link: DeathLink
 
 
