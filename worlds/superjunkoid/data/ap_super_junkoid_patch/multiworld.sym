@@ -172,7 +172,7 @@ CE:FF02 config_sprite
 91:8BBC write_repeated_memory_loop
 
 [source files]
-0000 e6ef0c80 main.asm
+0000 6a012ea4 main.asm
 0001 a2c82b0f ../../common/config.asm
 0002 06780555 ../../common/nofanfare.asm
 0003 76ed7129 common/multiworld.asm
@@ -183,13 +183,12 @@ CE:FF02 config_sprite
 0008 a2c84d6c ../../common/itemtable.asm
 
 [rom checksum]
-978a8867
+11a3fadb
 
 [addr-to-line mapping]
 00:ffc0 0000:0000001e
 00:ffd5 0000:0000001f
 80:8000 0000:00000022
-82:eedf 0000:00000025
 ce:ff00 0001:00000005
 ce:ff02 0001:00000008
 ce:ff04 0001:0000000b
