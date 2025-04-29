@@ -118,7 +118,7 @@ class SuperJunkoidWorld(World):
             self.multiworld.itempool.append(this_item)
 
     def get_filler_item_name(self) -> str:
-        filler_items = ["Baseball", "Sparksuit"]
+        filler_items = ["Baseball", "Sparksuit", "Magic Bolt", "Heart"]
         filler_item = self.multiworld.random.choice(filler_items)
         return filler_item
 
