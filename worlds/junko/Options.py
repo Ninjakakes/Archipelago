@@ -21,10 +21,21 @@ class ShuffleStrangeRocks(Toggle):
     display_name = "Shuffle Strange Rocks"
 
 
+class ExcludeHiddenOrangeButton(Toggle):
+    """
+    Exclude the difficult to find "The Crypt HIDDEN Orange Button" location
+    DO NOT DISABLE IF YOU DON'T KNOW EXACTLY WHERE THIS IS
+    """
+    display_name = "Exclude HIDDEN Orange Button"
+    default = 1
+
+
 @dataclass
 class JunkoOptions(PerGameCommonOptions):
     early_revolver: EarlyRevolver
 
     shuffle_strange_rocks: ShuffleStrangeRocks
+
+    exclude_HIDDEN_orange_button: ExcludeHiddenOrangeButton
 
     start_inventory_from_pool: StartInventoryPool

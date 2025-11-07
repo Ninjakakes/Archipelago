@@ -309,6 +309,9 @@ def set_rules(multiworld: MultiWorld, world, player: int):
     loc = multiworld.get_location(RAVE_ID_TO_NAME[RAVE_GRAVE_DRINK], player)
     add_rule(loc, lambda state: state.has(ACTIVE_ID_TO_NAME[BONE], player))
 
+    loc = multiworld.get_location(SHEOL_ID_TO_NAME[SHEOL_CRYPT_BUTTON], player)
+    add_rule(loc, lambda state: state.has(ACTIVE_ID_TO_NAME[EGG], player))
+
     loc = multiworld.get_location(THIRD_ID_TO_NAME[THIRD_ABANDON_BASEBALL], player)
     add_rule(loc, lambda state: can_unlock(state, player))
     loc = multiworld.get_location(THIRD_ID_TO_NAME[THIRD_ABANDON_BUTTON], player)

@@ -1,6 +1,7 @@
 from typing import ClassVar, Dict
 
-from BaseClasses import Tutorial, ItemClassification as ItemClass, Item
+from BaseClasses import Tutorial, ItemClassification as ItemClass, Item, LocationProgressType
+from .Locations import SHEOL_ID_TO_NAME, SHEOL_CRYPT_BUTTON
 
 from ..AutoWorld import WebWorld, World
 
@@ -60,3 +61,7 @@ class JunkoWorld(World):
             self.multiworld.early_items[self.player][ACTIVE_ID_TO_NAME[REVOLVER]] = 1
         elif self.options.early_revolver == "early_local":
             self.multiworld.local_early_items[self.player][ACTIVE_ID_TO_NAME[REVOLVER]] = 1
+
+        if self.options.exclude_HIDDEN_orange_button:
+            loc = self.multiworld.get_location(SHEOL_ID_TO_NAME[SHEOL_CRYPT_BUTTON], self.player)
+            loc.progress_type = LocationProgressType.EXCLUDED
