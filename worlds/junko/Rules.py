@@ -317,7 +317,7 @@ def set_rules(multiworld: MultiWorld, world, player: int):
     loc = multiworld.get_location(THIRD_ID_TO_NAME[THIRD_ABANDON_BUTTON], player)
     add_rule(loc, lambda state: can_unlock(state, player))
 
-    loc = multiworld.get_location(THIRD_ID_TO_NAME[THIRD_ABANDON_BUTTON], player)
+    loc = multiworld.get_location(THIRD_ID_TO_NAME[THIRD_SATURN_BUTTON], player)
     add_rule(loc, lambda state: state.has(ACTIVE_ID_TO_NAME[DRINK], player))
 
     loc = multiworld.get_location(THIRD_ID_TO_NAME[THIRD_PERVERT_BUTTON], player)
