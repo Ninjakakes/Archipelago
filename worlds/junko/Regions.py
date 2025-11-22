@@ -81,7 +81,7 @@ def create_regions(world):
     connect(world.player, "1st-to-Raveyard", regions["1st Street"], regions["The Raveyard"])
 
     connect(world.player, "Raveyard-to-Sheol", regions["The Raveyard"], regions["Sheol"],
-            lambda state: state.has(ACTIVE_ID_TO_NAME[EGG], world.player))
+            lambda state: state.has(ACTIVE_ID_TO_NAME[EGG], world.player) and state.has(ACTIVE_ID_TO_NAME[FISH], world.player))
 
     connect(world.player, "2nd-to-3rd", regions["2nd Street"], regions["3rd Street"],
             lambda state: state.has(PASSIVE_ID_TO_NAME[RING], world.player))
