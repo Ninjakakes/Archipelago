@@ -337,7 +337,7 @@ def set_rules(multiworld: MultiWorld, world, player: int):
     add_rule(loc,
              lambda state:
              can_fly(state, player) or state.has(ACTIVE_ID_TO_NAME[ICE], player) and
-             state.has(ACTIVE_ID_TO_NAME[BASEBALL], player)
+             state.has(ACTIVE_ID_TO_NAME[BASEBALL], player) and state.has(ACTIVE_ID_TO_NAME[CROWN], player)
              )
 
     loc = multiworld.get_location(FOURTH_ID_TO_NAME[FOURTH_CLUB_HIDDEN_BUTTON], player)
