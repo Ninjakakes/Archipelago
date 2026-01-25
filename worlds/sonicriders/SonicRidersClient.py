@@ -158,7 +158,7 @@ class SonicRidersContext(CommonContext):
         self.ui = SonicRidersManager(self)
         self.ui_task = asyncio.create_task(self.ui.async_run(), name="UI")
 
-    async def server_auth(self, username_requested: bool = True, password_requested: bool = False,
+    async def server_auth(self, password_requested: bool = False, username_requested: bool = True,
                           expectedUsername: str = None):
         if username_requested and not self.auth:
             await super(SonicRidersContext, self).get_username()
