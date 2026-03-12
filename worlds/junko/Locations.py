@@ -249,6 +249,7 @@ SNOW_MINES_B_BUTTON = 104
 SNOW_MINES_CABIN_BUTTON = 105
 SNOW_CABIN_FISH = 106
 SNOW_MINES_MIRROR = 107
+SNOW_HIDDEN_BUTTON = 165
 
 SNOW_ID_TO_NAME = {
     SNOW_STAIRS_BUTTON: "Snow Drifts Near Stairs Blue Button",
@@ -264,6 +265,7 @@ SNOW_ID_TO_NAME = {
     SNOW_MINES_CABIN_BUTTON: "Minefield By Cabin Blue Button",
     SNOW_CABIN_FISH: "Fish",
     SNOW_MINES_MIRROR: "Mirror (Arcaust Uniform)",
+    SNOW_HIDDEN_BUTTON: "Snow Drifts Hidden Blue Button"
 }
 ALL_SNOW = list(SNOW_ID_TO_NAME.keys())
 
